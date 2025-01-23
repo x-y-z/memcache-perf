@@ -158,6 +158,9 @@ struct gengetopt_args_info
   int poll_max_arg;	/**< @brief Set timeout for agent protocol recv polling. An agent not responding within time limit will be dropped. (default='120').  */
   char * poll_max_orig;	/**< @brief Set timeout for agent protocol recv polling. An agent not responding within time limit will be dropped. original value given at command line.  */
   const char *poll_max_help; /**< @brief Set timeout for agent protocol recv polling. An agent not responding within time limit will be dropped. help description.  */
+  int memcached_pid_arg;
+  char * memcached_pid_orig;
+  const char *memcached_pid_help;
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -208,6 +211,7 @@ struct gengetopt_args_info
   unsigned int measure_depth_given ;	/**< @brief Whether measure_depth was given.  */
   unsigned int poll_freq_given ;	/**< @brief Whether poll_freq was given.  */
   unsigned int poll_max_given ;	/**< @brief Whether poll_max was given.  */
+  unsigned int memcached_pid_given;
 
 } ;
 

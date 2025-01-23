@@ -187,6 +187,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->measure_depth_given = 0 ;
   args_info->poll_freq_given = 0 ;
   args_info->poll_max_given = 0 ;
+  args_info->memcached_pid_given = 0;
 }
 
 static
@@ -253,6 +254,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->poll_freq_orig = NULL;
   args_info->poll_max_arg = 120;
   args_info->poll_max_orig = NULL;
+  args_info->memcached_pid_arg = 0;
+  args_info->memcached_pid_orig = NULL;
   
 }
 
@@ -316,6 +319,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->measure_depth_help = gengetopt_args_info_help[49] ;
   args_info->poll_freq_help = gengetopt_args_info_help[50] ;
   args_info->poll_max_help = gengetopt_args_info_help[51] ;
+  args_info->memcached_pid_help = gengetopt_args_info_help[51] ;
   
 }
 
@@ -494,6 +498,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->measure_depth_orig));
   free_string_field (&(args_info->poll_freq_orig));
   free_string_field (&(args_info->poll_max_orig));
+  free_string_field (&(args_info->memcached_pid_orig));
   
   
 
@@ -627,6 +632,9 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "poll_freq", args_info->poll_freq_orig, 0);
   if (args_info->poll_max_given)
     write_into_file(outfile, "poll_max", args_info->poll_max_orig, 0);
+  
+  if (args_info->memcached_pid_given)
+    write_into_file(outfile, "memcached_pid", args_info->memcached_pid_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -1245,10 +1253,11 @@ cmdline_parser_internal (
         { "measure_depth",	1, NULL, 'D' },
         { "poll_freq",	1, NULL, 'm' },
         { "poll_max",	1, NULL, 'M' },
+        { "memcached_pid",	1, NULL, 'I' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hvs:q:t:K:V:r:u:U:P:T:c:d:Ri:SBw:W:eG:g:Aa:p:l:C:Q:D:m:M:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hvs:q:t:K:V:r:u:U:P:T:c:d:Ri:SBw:W:eG:g:Aa:p:l:C:Q:D:m:M:I:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1618,6 +1627,14 @@ cmdline_parser_internal (
             goto failure;
         
           break;
+	case 'I':
+          if (update_arg( (void *)&(args_info->memcached_pid_arg), 
+               &(args_info->memcached_pid_orig), &(args_info->memcached_pid_given),
+              &(local_args_info.memcached_pid_given), optarg, 0, "0", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "memcached_pid", 'I',
+              additional_error))
+            goto failure;
 
         case 0:	/* Long option with no short option */
           if (strcmp (long_options[option_index].name, "version") == 0) {

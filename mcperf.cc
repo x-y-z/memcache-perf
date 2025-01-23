@@ -1150,6 +1150,11 @@ void* thread_main(void *arg) {
   return cs;
 }
 
+void migrate_all_pages(int pid)
+{
+    printf("memcached pid: %d\n", args.memcached_pid_arg);
+}
+
 void do_mcperf(const vector<string>& servers, options_t& options,
                  ConnectionStats& stats, bool master
 #ifdef HAVE_LIBZMQ
@@ -1387,6 +1392,9 @@ void do_mcperf(const vector<string>& servers, options_t& options,
     }
 
     if (master) V("Warmup stop.");
+    if (args.memcached_pid_given) {
+        migrate_all_pages(args.memcached_pid_arg);
+    }
   }
 
 
