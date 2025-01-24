@@ -1239,8 +1239,12 @@ static void* migrate_all_pages(void *arg)
 
     pids = listDirectory(task_path);
 
-    fromnodes = numa_parse_nodestring("1");
-    tonodes = numa_parse_nodestring("0");
+    printf("migrate memcached from node %s to node %s\n", args.migrate_from_arg, args.migr);
+
+    fromnodes = numa_parse_nodestring(args.migrate_from_arg);
+
+    tonodes = numa_parse_nodestring(args.migrate_to_arg);
+
     for (int i = 0; i < pids.size(); i++) {
         int rc = numa_migrate_pages(pids[i], fromnodes, tonodes);
 

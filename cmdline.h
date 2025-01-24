@@ -161,6 +161,12 @@ struct gengetopt_args_info
   int memcached_pid_arg;
   char * memcached_pid_orig;
   const char *memcached_pid_help;
+  char * migrate_from_arg;
+  char * migrate_from_orig;
+  const char *migrate_from_help;
+  char * migrate_to_arg;
+  char * migrate_to_orig;
+  const char *migrate_to_help;
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -212,6 +218,8 @@ struct gengetopt_args_info
   unsigned int poll_freq_given ;	/**< @brief Whether poll_freq was given.  */
   unsigned int poll_max_given ;	/**< @brief Whether poll_max was given.  */
   unsigned int memcached_pid_given;
+  unsigned int migrate_from_given;
+  unsigned int migrate_to_given;
 
 } ;
 

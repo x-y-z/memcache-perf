@@ -256,6 +256,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->poll_max_orig = NULL;
   args_info->memcached_pid_arg = 0;
   args_info->memcached_pid_orig = NULL;
+  args_info->migrate_from_arg = gengetopt_strdup("1");
+  args_info->migrate_from_orig = NULL;
+  args_info->migrate_to_arg = gengetopt_strdup("0");
+  args_info->migrate_to_orig = NULL;
   
 }
 
@@ -320,6 +324,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->poll_freq_help = gengetopt_args_info_help[50] ;
   args_info->poll_max_help = gengetopt_args_info_help[51] ;
   args_info->memcached_pid_help = gengetopt_args_info_help[51] ;
+  args_info->migrate_from_help = gengetopt_args_info_help[51] ;
+  args_info->migrate_to_help = gengetopt_args_info_help[51] ;
   
 }
 
@@ -499,6 +505,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->poll_freq_orig));
   free_string_field (&(args_info->poll_max_orig));
   free_string_field (&(args_info->memcached_pid_orig));
+  free_string_field (&(args_info->migrate_from_orig));
+  free_string_field (&(args_info->migrate_to_orig));
   
   
 
@@ -635,6 +643,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
   
   if (args_info->memcached_pid_given)
     write_into_file(outfile, "memcached_pid", args_info->memcached_pid_orig, 0);
+  if (args_info->migrate_from_given)
+    write_into_file(outfile, "migrate_from", args_info->migrate_from_orig, 0);
+  if (args_info->migrate_to_given)
+    write_into_file(outfile, "migrate_to", args_info->migrate_to_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -1254,6 +1266,8 @@ cmdline_parser_internal (
         { "poll_freq",	1, NULL, 'm' },
         { "poll_max",	1, NULL, 'M' },
         { "memcached_pid",	1, NULL, 'I' },
+        { "migrate_from",	1, NULL, 0 },
+        { "migrate_to",	1, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -1643,8 +1657,30 @@ cmdline_parser_internal (
             exit (EXIT_SUCCESS);
           }
 
+	  /* migrate_from */
+	  
+          if (strcmp (long_options[option_index].name, "migrate_from") == 0)
+          {
+          if (update_arg( (void *)&(args_info->migrate_from_arg), 
+               &(args_info->migrate_from_orig), &(args_info->migrate_from_given),
+              &(local_args_info.migrate_from_given), optarg, 0, "0", ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "migrate_from", '-',
+              additional_error))
+            goto failure;
+          } /* migrate_to */
+          else if (strcmp (long_options[option_index].name, "migrate_to") == 0)
+          {
+          if (update_arg( (void *)&(args_info->migrate_to_arg), 
+               &(args_info->migrate_to_orig), &(args_info->migrate_to_given),
+              &(local_args_info.migrate_to_given), optarg, 0, "0", ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "migrate_to", '-',
+              additional_error))
+            goto failure;
+          }
           /* Disable log messages..  */
-          if (strcmp (long_options[option_index].name, "quiet") == 0)
+          else if (strcmp (long_options[option_index].name, "quiet") == 0)
           {
           
           
