@@ -1,5 +1,5 @@
 VERSION=0.3
-LIBS=-lzmq -levent -lpthread -lrt  
+LIBS=-lzmq -levent -lpthread -lrt -lnuma
 CXXFLAGS= $(XFLAGS) -g -mcpu=neoverse-v2+nosve2 -Ofast -fomit-frame-pointer -flto -std=c++0x -D_GNU_SOURCE $(INCPATHFLAG)
 HEADERS= AdaptiveSampler.h barrier.h cmdline.h Connection.h ConnectionStats.h \
  Generator.h log.h mcperf.h util.h AgentStats.h binary_protocol.h \

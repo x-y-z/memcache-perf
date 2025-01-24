@@ -8,10 +8,14 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <numaif.h>
+#include <numa.h>
+#include <dirent.h>
 
 #include <queue>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
@@ -1150,9 +1154,102 @@ void* thread_main(void *arg) {
   return cs;
 }
 
-void migrate_all_pages(int pid)
+struct vma {
+    unsigned long start;
+    unsigned long end;
+};
+
+static std::vector<int> listDirectory(const std::string& path)
 {
+    DIR* dir = opendir(path.c_str());
+    std::vector<int> pids;
+
+    if (dir == nullptr) {
+        return pids;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string item(entry->d_name);
+
+        if (item == "." || item == "..")
+            continue;
+        pids.push_back(std::stoi(item));
+    }
+
+    closedir(dir);
+
+    return pids;
+}
+
+#if 0
+static int scan_vmas(int pid, std::vector<struct vma>& vmas)
+{
+    char proc_template[] = "/proc/%u/maps";
+    char proc[80];
+    FILE *maps_fp;
+    int status;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    status = snprintf(proc, 80, proc_template, pid);
+    if (status < 0) {
+        perror("cannot make proc file path\n");
+        return -1;
+    }
+    maps_fp = fopen(proc, "r");
+    if (maps_fp == NULL) {
+        perror("cannot open proc file\n");
+        return -1;
+    }
+
     printf("memcached pid: %d\n", args.memcached_pid_arg);
+    while ((read = getline(&line, &len, maps_fp)) != -1) {
+        std::string s(line);
+        struct vma one;
+
+        size_t dash_pos = s.find_first_of("-");
+        one.start = std::stol(s.substr(0, dash_pos), nullptr, 16);
+        one.end = std::stol(s.substr(dash_pos + 1, s.find_first_of(" ")), nullptr, 16);
+
+        printf("%s", line);
+        printf("%lx-%lx\n", one.start, one.end);
+
+    }
+    fclose(maps_fp);
+    if (line)
+        free(line);
+
+    return 0;
+}
+#endif
+
+static void* migrate_all_pages(void *arg)
+{
+    unsigned int pid = *(unsigned int *)arg;
+    std::map<int, std::vector<struct vma>> vma_map;
+    char task_folder[80];
+    std::vector<int> pids;
+    struct bitmask *fromnodes;
+    struct bitmask *tonodes;
+
+    snprintf(task_folder, 80, "/proc/%d/task", pid);
+    std::string task_path(task_folder);
+
+    pids = listDirectory(task_path);
+
+    fromnodes = numa_parse_nodestring("1");
+    tonodes = numa_parse_nodestring("0");
+    for (int i = 0; i < pids.size(); i++) {
+        int rc = numa_migrate_pages(pids[i], fromnodes, tonodes);
+
+        if (rc < 0)
+            perror("migrate pages");
+    }
+
+
+    return NULL;
 }
 
 void do_mcperf(const vector<string>& servers, options_t& options,
@@ -1392,9 +1489,6 @@ void do_mcperf(const vector<string>& servers, options_t& options,
     }
 
     if (master) V("Warmup stop.");
-    if (args.memcached_pid_given) {
-        migrate_all_pages(args.memcached_pid_arg);
-    }
   }
 
 
@@ -1407,6 +1501,11 @@ void do_mcperf(const vector<string>& servers, options_t& options,
       V("Sleeping %.1fs for -W.", t);
       sleep_time(t);
     }
+  }
+
+  if (master && args.memcached_pid_given) {
+    pthread_t migrate_thread;
+    pthread_create(&migrate_thread, NULL, migrate_all_pages, (void*)&args.memcached_pid_arg);
   }
 
 #ifdef HAVE_LIBZMQ
