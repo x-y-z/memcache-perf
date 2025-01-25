@@ -1159,13 +1159,12 @@ struct vma {
     unsigned long end;
 };
 
-static std::vector<int> listDirectory(const std::string& path)
+static void listDirectory(const std::string& path, std::vector<int>& pids)
 {
     DIR* dir = opendir(path.c_str());
-    std::vector<int> pids;
 
     if (dir == nullptr) {
-        return pids;
+        return;
     }
 
     struct dirent* entry;
@@ -1179,7 +1178,7 @@ static std::vector<int> listDirectory(const std::string& path)
 
     closedir(dir);
 
-    return pids;
+    return;
 }
 
 #if 0
@@ -1227,31 +1226,47 @@ static int scan_vmas(int pid, std::vector<struct vma>& vmas)
 
 static void* migrate_all_pages(void *arg)
 {
-    unsigned int pid = *(unsigned int *)arg;
-    std::map<int, std::vector<struct vma>> vma_map;
+    const char *pid_list_char = (const char *)arg;
+    std::string pid_list(pid_list_char);
+    std::vector<std::string> pids_str;
+    std::vector<int> all_pids;
     char task_folder[80];
-    std::vector<int> pids;
     struct bitmask *fromnodes;
     struct bitmask *tonodes;
+    double all_start, all_end;
 
-    snprintf(task_folder, 80, "/proc/%d/task", pid);
-    std::string task_path(task_folder);
 
-    pids = listDirectory(task_path);
+    tokenize(pid_list, pids_str);
 
-    printf("migrate memcached from node %s to node %s\n", args.migrate_from_arg, args.migr);
+    for (int i = 0; i < pids_str.size(); i++) {
+        unsigned int pid = std::stoi(pids_str[i]);
+
+        snprintf(task_folder, 80, "/proc/%d/task", pid);
+        std::string task_path(task_folder);
+
+        listDirectory(task_path, all_pids);
+    }
+
+    printf("migrate memcached from node %s to node %s\n", args.migrate_from_arg, args.migrate_to_arg);
 
     fromnodes = numa_parse_nodestring(args.migrate_from_arg);
 
     tonodes = numa_parse_nodestring(args.migrate_to_arg);
 
-    for (int i = 0; i < pids.size(); i++) {
-        int rc = numa_migrate_pages(pids[i], fromnodes, tonodes);
+    all_start = get_time();
+    for (int i = 0; i < all_pids.size(); i++) {
+        double start = get_time(), end;
+        int rc = numa_migrate_pages(all_pids[i], fromnodes, tonodes);
+
+        end = get_time();
+        printf("migrate pid %d used %lf sec\n", all_pids[i], end - start);
 
         if (rc < 0)
             perror("migrate pages");
     }
+    all_end = get_time();
 
+    printf("total migration used %lf sec\n", all_end - all_start);
 
     return NULL;
 }
@@ -1509,7 +1524,7 @@ void do_mcperf(const vector<string>& servers, options_t& options,
 
   if (master && args.memcached_pid_given) {
     pthread_t migrate_thread;
-    pthread_create(&migrate_thread, NULL, migrate_all_pages, (void*)&args.memcached_pid_arg);
+    pthread_create(&migrate_thread, NULL, migrate_all_pages, (void*)args.memcached_pid_arg);
   }
 
 #ifdef HAVE_LIBZMQ

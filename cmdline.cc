@@ -254,7 +254,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->poll_freq_orig = NULL;
   args_info->poll_max_arg = 120;
   args_info->poll_max_orig = NULL;
-  args_info->memcached_pid_arg = 0;
+  args_info->memcached_pid_arg = NULL;
   args_info->memcached_pid_orig = NULL;
   args_info->migrate_from_arg = gengetopt_strdup("1");
   args_info->migrate_from_orig = NULL;
@@ -1644,7 +1644,7 @@ cmdline_parser_internal (
 	case 'I':
           if (update_arg( (void *)&(args_info->memcached_pid_arg), 
                &(args_info->memcached_pid_orig), &(args_info->memcached_pid_given),
-              &(local_args_info.memcached_pid_given), optarg, 0, "0", ARG_INT,
+              &(local_args_info.memcached_pid_given), optarg, 0, "0", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "memcached_pid", 'I',
               additional_error))
